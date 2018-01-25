@@ -1,4 +1,4 @@
-var gl;
+let gl;
 
 function main() {
     let canvas = document.getElementById("my-canvas");
@@ -25,6 +25,8 @@ function main() {
             // x1, y1, x2, y2, x3, y3
             let vertices = [-0.8, -0.6, 0.7, -0.6, -0.5, 0.7];
 
+            createGasket(vertices, 2000);
+
             // Create WebGL Buffer and Populate
             let vertexBuff = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
@@ -49,4 +51,34 @@ function main() {
                             0,                  // starting index in the array
                             vertices.length/2); // number of vertices to draw
         });
+
+    function createGasket(inputArr, count) {
+        // random coordinate between -1 and 1
+        let p = [0, 0];
+        let c = 0;
+        while (c < count) {
+            let v = 0;
+            // select a random vertices
+            switch(Math.floor(Math.random() * 3)) {
+                case 0:
+                    v = [inputArr[0], inputArr[1]];
+                    break;
+                case 1:
+                    v = [inputArr[2], inputArr[3]];
+                    break;
+                case 2:
+                    v = [inputArr[4], inputArr[5]];
+                    break;
+                default:
+                    v = [inputArr[0], inputArr[1]];
+                    break;
+            }
+            // point halfway between p and v
+            let q = [((p[0] + v[0]) / 2), ((p[1] + v[1]) / 2)];
+            inputArr.push(q[0]);
+            inputArr.push(q[1]);
+            p = q;
+            c++;
+        }
+    }
 }
