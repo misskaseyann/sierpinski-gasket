@@ -2,12 +2,13 @@ let gl;
 
 function main() {
     let canvas = document.getElementById("my-canvas");
-
-    let vertices = [];
-
+    const depthslide = document.getElementById("depth");
+    const el = document.getElementById("my-canvas");
+    let depth = 5;
+    let numTriangles = Math.pow(3, depth);
+    let numVertices = 3 * numTriangles;
+    let points = [];
     let index = 0;
-
-    let depth = 1;
 
     // setupWebGL is defined in webgl-utils.js
     gl = WebGLUtils.setupWebGL(canvas);
@@ -29,17 +30,18 @@ function main() {
 
             // Initialize a JS array; -1 <= x <= 1
             // x1, y1, x2, y2, x3, y3
-            let start = [-0.8, -0.6, 0.7, -0.6, -0.5, 0.7];
+            //let start = [-0.8, -0.6, 0.7, -0.6, -0.5, 0.7];
+            let start = [];
 
             //createGasket(vertices, 2000);
-            divide_triangle(start, depth);
+            //divide_triangle(start, depth);
 
             // Create WebGL Buffer and Populate
             let vertexBuff = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
 
             // Copy the vertices data
-            gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertices), gl.STATIC_DRAW);
+            //gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
 
             // Obtain Reference to Vertex Shader Attribute
             // vertexPos is an attribute name in vertex shader.
@@ -57,29 +59,82 @@ function main() {
                             gl.POINTS,          // draw only points
                             0,                  // starting index in the array
                             vertices.length/2); // number of vertices to draw*/
-            gl.drawArrays(gl.TRIANGLES, 0, Math.pow(3, depth));
+
+            el.addEventListener('click', event => {
+                let cx = event.clientX - canvas.offsetLeft;
+                let cy = event.clientY - canvas.offsetTop;
+
+                if (start.length < 4) {
+                    x = (((2 * cx) / 512) - 1);
+                    start.push(x);
+                    y = -(((2 * cy) / 512) - 1);
+                    start.push(y);
+                } else if (start.length === 4) {
+                    x = (((2 * cx) / 512) - 1);
+                    start.push(x);
+                    y = -(((2 * cy) / 512) - 1);
+                    start.push(y);
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    divide_triangle(start, depth);
+                    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
+                    gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+                } else {
+                    // do nothing
+                }
+            });
+
+            depthslide.addEventListener('change', event => {
+                depth = event.target.value;
+                update();
+            });
+
+            //gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+
+            function update() {
+                numTriangles = Math.pow(3, depth);
+                numVertices = 3 * numTriangles;
+                points = [];
+                index = 0;
+                divide_triangle(start, depth);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
+                gl.drawArrays(gl.TRIANGLES, 0, numVertices)
+            }
 
         });
 
-    function divide_triangle(pointsArr, depth) {
-        if (depth > 0) {
+    function divide_triangle(pointArr, count) {
+        // three points of the triangle
+        let a = [pointArr[0], pointArr[1]];
+        let b = [pointArr[2], pointArr[3]];
+        let c = [pointArr[4], pointArr[5]];
+        if (count > 0) {
             // midpoints of sides
-            let v0 = (pointsArr[0] + pointsArr[1]) / 2;
-            let v1 = (pointsArr[0] + pointsArr[2]) / 2;
-            let v2 = (pointsArr[1] + pointsArr[2]) / 2;
+            let v0 = [((a[0] + b[0]) / 2), ((a[1] + b[1]) / 2)];
+            let v1 = [((a[0] + c[0]) / 2), ((a[1] + c[1]) / 2)];
+            let v2 = [((b[0] + c[0]) / 2), ((b[1] + c[1]) / 2)];
             // subdivide all but middle
-            divide_triangle(pointsArr[0], v0, v1, depth -1);
-            divide_triangle(pointsArr[2], v1, v2, depth - 1);
-            divide_triangle(pointsArr[1], v2, v0, depth - 1);
+            divide_triangle([a[0], a[1], v0[0], v0[1], v1[0], v1[1]], count - 1);
+            divide_triangle([c[0], c[1], v1[0], v1[1], v2[0], v2[1]], count - 1);
+            divide_triangle([b[0], b[1], v2[0], v2[1], v0[0], v0[1]], count - 1);
         } else {
-            make_triangle(pointsArr[0], pointsArr[1], pointsArr[2]); // end of recursion
+            make_triangle(a, b, c); // end of recursion
         }
     }
 
     function make_triangle(a, b, c) {
-        vertices.push(a);
-        vertices.push(b);
-        vertices.push(c);
+        points[index] = a[0];
+        index++;
+        points[index] = a[1];
+        index++;
+        points[index] = b[0];
+        index++;
+        points[index] = b[1];
+        index++;
+        points[index] = c[0];
+        index++;
+        points[index] = c[1];
+        index++;
     }
 
     function createGasket(inputArr, count) {
@@ -111,36 +166,4 @@ function main() {
             c++;
         }
     }
-
-    /*function sierpinskiTriangle(inputArr, depth) {
-        depth = depth - 1;
-        // three points of triangle
-        let a = [inputArr[0], inputArr[1]];
-        let b = [inputArr[2], inputArr[3]];
-        let c = [inputArr[4], inputArr[5]];
-        // three midpoints of triangle
-        let r = [((a[0] + b[0]) / 2), ((a[1] + b[1]) / 2)];
-        let s = [((b[0] + c[0]) / 2), ((b[1] + c[1]) / 2)];
-        let t = [((a[0] + c[0]) / 2), ((a[1] + c[1]) / 2)];
-        //inputArr.push([a[0], a[1], r[0], r[1], t[0], t[1]]);
-        let art = [a[0], a[1], r[0], r[1], t[0], t[1]];
-        vertices.push(...art);
-        //inputArr.push([r[0], r[1], b[0], b[1], s[0], s[1]]);
-        let rbs = [r[0], r[1], b[0], b[1], s[0], s[1]];
-        vertices.push(...rbs);
-        //inputArr.push([t[0], t[1], s[0], s[1], c[0], c[1]]);
-        let tsc = [t[0], t[1], s[0], s[1], c[0], c[1]];
-        vertices.push(...tsc);
-        console.log(depth);
-        if (depth > 0) {
-            sierpinskiTriangle(art, depth);
-            sierpinskiTriangle(rbs, depth);
-            sierpinskiTriangle(tsc, depth);
-        }
-    }*/
-
-    const depthslide = document.getElementById("depth");
-    depthslide.addEventListener('change', event => {
-        console.log("New angle is ", event.target.value);
-    });
 }
