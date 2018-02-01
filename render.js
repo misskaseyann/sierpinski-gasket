@@ -2,6 +2,13 @@ let gl;
 
 function main() {
     let canvas = document.getElementById("my-canvas");
+    const depthslide = document.getElementById("depth");
+    const el = document.getElementById("my-canvas");
+    let depth = 5;
+    let numTriangles = Math.pow(3, depth);
+    let numVertices = 3 * numTriangles;
+    let points = [];
+    let index = 0;
 
     // setupWebGL is defined in webgl-utils.js
     gl = WebGLUtils.setupWebGL(canvas);
@@ -23,16 +30,18 @@ function main() {
 
             // Initialize a JS array; -1 <= x <= 1
             // x1, y1, x2, y2, x3, y3
-            let vertices = [-0.8, -0.6, 0.7, -0.6, -0.5, 0.7];
+            //let start = [-0.8, -0.6, 0.7, -0.6, -0.5, 0.7];
+            let start = [];
 
-            createGasket(vertices, 2000);
+            //createGasket(vertices, 2000);
+            //divide_triangle(start, depth);
 
             // Create WebGL Buffer and Populate
             let vertexBuff = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
 
             // Copy the vertices data
-            gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertices), gl.STATIC_DRAW);
+            //gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
 
             // Obtain Reference to Vertex Shader Attribute
             // vertexPos is an attribute name in vertex shader.
@@ -46,11 +55,87 @@ function main() {
                                     false,      // data does not require normalization into "unit" range
                                     0,          // stride=0: the attributes are tightly packed
                                     0);         // offset=0: the first byte of the buffer is the actual data
-            gl.drawArrays(
+            /*gl.drawArrays(
                             gl.POINTS,          // draw only points
                             0,                  // starting index in the array
-                            vertices.length/2); // number of vertices to draw
+                            vertices.length/2); // number of vertices to draw*/
+
+            el.addEventListener('click', event => {
+                let cx = event.clientX - canvas.offsetLeft;
+                let cy = event.clientY - canvas.offsetTop;
+
+                if (start.length < 4) {
+                    x = (((2 * cx) / 512) - 1);
+                    start.push(x);
+                    y = -(((2 * cy) / 512) - 1);
+                    start.push(y);
+                } else if (start.length === 4) {
+                    x = (((2 * cx) / 512) - 1);
+                    start.push(x);
+                    y = -(((2 * cy) / 512) - 1);
+                    start.push(y);
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    divide_triangle(start, depth);
+                    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
+                    gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+                } else {
+                    // do nothing
+                }
+            });
+
+            depthslide.addEventListener('change', event => {
+                depth = event.target.value;
+                update();
+            });
+
+            //gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+
+            function update() {
+                numTriangles = Math.pow(3, depth);
+                numVertices = 3 * numTriangles;
+                points = [];
+                index = 0;
+                divide_triangle(start, depth);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
+                gl.drawArrays(gl.TRIANGLES, 0, numVertices)
+            }
+
         });
+
+    function divide_triangle(pointArr, count) {
+        // three points of the triangle
+        let a = [pointArr[0], pointArr[1]];
+        let b = [pointArr[2], pointArr[3]];
+        let c = [pointArr[4], pointArr[5]];
+        if (count > 0) {
+            // midpoints of sides
+            let v0 = [((a[0] + b[0]) / 2), ((a[1] + b[1]) / 2)];
+            let v1 = [((a[0] + c[0]) / 2), ((a[1] + c[1]) / 2)];
+            let v2 = [((b[0] + c[0]) / 2), ((b[1] + c[1]) / 2)];
+            // subdivide all but middle
+            divide_triangle([a[0], a[1], v0[0], v0[1], v1[0], v1[1]], count - 1);
+            divide_triangle([c[0], c[1], v1[0], v1[1], v2[0], v2[1]], count - 1);
+            divide_triangle([b[0], b[1], v2[0], v2[1], v0[0], v0[1]], count - 1);
+        } else {
+            make_triangle(a, b, c); // end of recursion
+        }
+    }
+
+    function make_triangle(a, b, c) {
+        points[index] = a[0];
+        index++;
+        points[index] = a[1];
+        index++;
+        points[index] = b[0];
+        index++;
+        points[index] = b[1];
+        index++;
+        points[index] = c[0];
+        index++;
+        points[index] = c[1];
+        index++;
+    }
 
     function createGasket(inputArr, count) {
         // random coordinate between -1 and 1
