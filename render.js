@@ -1,14 +1,16 @@
 let gl;
+let depth = 5;
+let numTriangles = Math.pow(3, depth);
+let numVertices = 3 * numTriangles;
+let points = [];
+let index = 0;
 
 function main() {
     let canvas = document.getElementById("my-canvas");
     const depthslide = document.getElementById("depth");
     const el = document.getElementById("my-canvas");
-    let depth = 5;
-    let numTriangles = Math.pow(3, depth);
-    let numVertices = 3 * numTriangles;
-    let points = [];
-    let index = 0;
+
+
 
     // setupWebGL is defined in webgl-utils.js
     gl = WebGLUtils.setupWebGL(canvas);
@@ -88,6 +90,33 @@ function main() {
                 update();
             });
 
+            window.addEventListener('keydown', event => {
+                if(event.keyCode === 39) {
+                    start[0] += 0.01;
+                    start[2] += 0.01;
+                    start[4] += 0.01;
+                    update();
+                }
+                if(event.keyCode === 37) {
+                    start[0] -= 0.01;
+                    start[2] -= 0.01;
+                    start[4] -= 0.01;
+                    update();
+                }
+                if(event.keyCode === 40) {
+                    start[1] -= 0.01;
+                    start[3] -= 0.01;
+                    start[5] -= 0.01;
+                    update();
+                }
+                if(event.keyCode === 38) {
+                    start[1] += 0.01;
+                    start[3] += 0.01;
+                    start[5] += 0.01;
+                    update();
+                }
+            });
+
             //gl.drawArrays(gl.TRIANGLES, 0, numVertices);
 
             function update() {
@@ -98,7 +127,7 @@ function main() {
                 divide_triangle(start, depth);
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
-                gl.drawArrays(gl.TRIANGLES, 0, numVertices)
+                gl.drawArrays(gl.TRIANGLES, 0, numVertices);
             }
 
         });
