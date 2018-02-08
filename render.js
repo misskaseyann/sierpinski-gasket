@@ -4,22 +4,25 @@ let numTriangles = Math.pow(3, depth);
 let numVertices = 3 * numTriangles;
 let points = [];
 let index = 0;
+let mycolor;
 
 function main() {
     let canvas = document.getElementById("my-canvas");
     const depthslide = document.getElementById("depth");
     const el = document.getElementById("my-canvas");
 
-
-
     // setupWebGL is defined in webgl-utils.js
     gl = WebGLUtils.setupWebGL(canvas);
+
 
     // Load the shader pair. 2nd arg is vertex shader, 3rd arg is fragment shader.
     ShaderUtils.loadFromFile(gl, "vshader.glsl", "fshader.glsl")
         .then( (prog) => {
 
             gl.useProgram(prog);
+
+            mycolor = gl.getUniformLocation(prog, "mycolor");
+            gl.uniform3f(mycolor, Math.random(), Math.random(), Math.random());
 
             // Use black RGB = (0,0,0) for the clear color
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -80,6 +83,7 @@ function main() {
                     divide_triangle(start, depth);
                     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
                     gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+                    window.requestAnimationFrame(animLoop);
                 } else {
                     // do nothing
                 }
@@ -129,6 +133,37 @@ function main() {
                 gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
                 gl.drawArrays(gl.TRIANGLES, 0, numVertices);
             }
+
+            let lastUpdate = 0;
+            let finished = true;
+            let color1 = [Math.random(), Math.random(), Math.random()];
+            let color2;
+            let t = 1;
+            function animLoop(time) {
+                if (time - lastUpdate > 150) {
+
+                    if (t >= 1) {
+                        color2 = [Math.random(), Math.random(), Math.random()];
+                        t = 0.0;
+                    } else {
+                        colorr = color1[0] + (color2[0] - color1[0]) * t;
+                        colorg = color1[1] + (color2[1] - color1[1]) * t;
+                        colorb = color1[2] + (color2[2] - color1[2]) * t;
+                        color1 = [colorr, colorg, colorb];
+                        gl.uniform3f(mycolor, colorr, colorg, colorb);
+                        t += 0.05;
+                    }
+                    //gl.uniform3f(mycolor, Math.random(), Math.random(), Math.random());
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(points), gl.STATIC_DRAW);
+                    gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+                    lastUpdate = time;
+                }
+                window.requestAnimationFrame(animLoop);
+            }
+
+            ////////////////////////////
+
 
         });
 
