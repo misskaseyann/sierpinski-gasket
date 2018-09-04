@@ -8,3 +8,9 @@ How to use:
 * Use arrow keys to move the triangle around.
 * The buttons toggle colors interpolating or flashing.
 * Move the slider to change the depth of recursion.
+
+[Sierpinski Gasket Points](http://www.cis.gvsu.edu/~stowellk/sierpinski-gasket/)
+
+[Sierpinksi Gasket Recursion Depth Slider](http://www.cis.gvsu.edu/~stowellk/sierpinski-recursion/)
+
+[Sierpinksi Gasket Animated Color](http://www.cis.gvsu.edu/~stowellk/sierpinski-animation/)
